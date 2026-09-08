@@ -1,0 +1,24 @@
+{
+  "name": "productiveduck",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/PaMEllAaaa/ProductiveDuck#readme",
+  "bugs": {
+    "url": "https://github.com/PaMEllAaaa/ProductiveDuck/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PaMEllAaaa/ProductiveDuck.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

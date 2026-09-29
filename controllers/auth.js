@@ -83,3 +83,17 @@ exports.getMe = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     res.status(200).json({success: true, data: user});
 };
+
+// @desc    Logout user
+// @route   POST /api/v1/auth/logout
+// @access  Public
+exports.logout = (req, res) => {
+    res.clearCookie('token', {
+        path: '/'
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: 'Logged out successfully'
+    });
+};

@@ -14,7 +14,7 @@
         "isActive": true
     },
     {
-        "hotel": "REPLACE_WITH_HOTEL7_ID",
+        "hotel": "REPLACE_WITH_HOTEL1_ID",
         "name": "sauna",
         "description": "บริการห้องซาวน่า",
         "dailyCapacity": 15,
@@ -32,6 +32,13 @@
         "name": "breakfast",
         "description": "บริการอาหารเช้า",
         "dailyCapacity": 50,
+        "isActive": true
+    },
+    {
+        "hotel": "REPLACE_WITH_HOTEL1_ID",
+        "name": "karaoke room",
+        "description": "ห้องคาราโอเกะ",
+        "dailyCapacity": 30,
         "isActive": true
     }
 ]

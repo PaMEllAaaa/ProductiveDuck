@@ -9,7 +9,8 @@ exports.getBookings = async (req, res, next) => {
     let query;
     // General users can see only their own bookings!
     if (req.user.role !== 'admin') {
-        query = Booking.find({ user: req.user.id }).populate({
+        query = Booking.find({ user: req.user.id })
+        .populate({
             path: 'hotel',
             select: 'name province tel'
         })
@@ -20,7 +21,8 @@ exports.getBookings = async (req, res, next) => {
     } else { //If you are an admin, you can see all bookings!
         if (req.params.hotelId) {
             console.log(req.params.hotelId);
-            query = Booking.find({ hotel: req.params.hotelId }).populate({
+            query = Booking.find({ hotel: req.params.hotelId })
+            .populate({
                 path: 'hotel',
                 select: 'name province tel'
             })
@@ -29,7 +31,8 @@ exports.getBookings = async (req, res, next) => {
                 select: 'name description'
             });
         } else {
-            query = Booking.find().populate({
+            query = Booking.find()
+            .populate({
                 path: 'hotel',
                 select: 'name province tel'
             })
@@ -77,7 +80,24 @@ exports.getBooking = async (req, res, next) => {
 //@access Private
 exports.addBooking = async (req, res, next) => {
     try {
+        // Check hotel id is matched with URL
+        if (req.body.hotel && req.body.hotel !== req.params.hotelId) {
+            return res.status(400).json({ success: false, message: 'Hotel ID in request body must match the Hotel ID in the URL' });
+        }
         req.body.hotel = req.params.hotelId;
+
+        if (req.user.role === 'admin') {
+            // Admin must enter user id 
+            if (!req.body.user) {
+                return res.status(400).json({ success: false, message: 'Admin must specify a user ID in the request body' });
+            }
+        } else {
+            // User cannot add other user id
+            if (req.body.user && req.body.user !== req.user.id) {
+                return res.status(403).json({ success: false, message: 'You are not authorized to create a booking for another user' });
+            }
+            req.body.user = req.user.id;
+        }
         
         const hotel = await Hotel.findById(req.params.hotelId);
 
@@ -95,9 +115,27 @@ exports.addBooking = async (req, res, next) => {
             return res.status(400).json({ success: false, message: `The user with ID ${req.user.id} has already created 3 bookings` });
         }
 
-        // Check Services Validation & Capacity
-        const { services, bookingDate } = req.body;
+        const { checkInDate, checkOutDate, services } = req.body;
 
+        // Check Check in & Check out date
+        if (!checkInDate || !checkOutDate) {
+            return res.status(400).json({ success: false, message: 'Please provide both checkInDate and checkOutDate' });
+        }
+
+        const cIn = new Date(checkInDate);
+        const cOut = new Date(checkOutDate);
+
+        if (cOut <= cIn) {
+            return res.status(400).json({ success: false, message: 'Check-out date must be after check-in date' });
+        }
+
+        // Maximum Booking of 3 nights
+        const nightDiff = Math.ceil((cOut.getTime() - cIn.getTime()) / (1000 * 3600 * 24));
+        if (nightDiff > 3 && req.user.role !== 'admin') {
+            return res.status(400).json({ success: false, message: 'You can only book up to 3 nights per booking' });
+        }
+
+        // Check Services Validation & Capacity
         if (services && Array.isArray(services) && services.length > 0) {
             if (services.length > 2) {
                 return res.status(400).json({ success: false, message: 'You can select up to 2 services per booking' });
@@ -116,24 +154,34 @@ exports.addBooking = async (req, res, next) => {
                 });
             }
 
-            const bDate = new Date(bookingDate);
-            const startDate = new Date(bDate.setHours(0, 0, 0, 0));
-            const endDate = new Date(bDate.setHours(23, 59, 59, 999));
+            let currentDate = new Date(cIn);
+            currentDate.setHours(0, 0, 0, 0);
+            const lastDate = new Date(cOut);
+            lastDate.setHours(0, 0, 0, 0);
 
-            for (const srv of foundServices) {
-                const count = await Booking.countDocuments({
-                    hotel: req.params.hotelId,
-                    bookingDate: { $gte: startDate,$lte: endDate },
-                    services: srv._id
-                });
+            while (currentDate < lastDate) {
+                const targetDate = new Date(currentDate);
+                const nextDate = new Date(currentDate);
+                nextDate.setDate(nextDate.getDate() + 1);
 
-                if (count >= srv.dailyCapacity) {
-                    return res.status(400).json({
-                        success: false,
-                        message: `Service '${srv.name}' is fully booked on this date`
+                for (const srv of foundServices) {
+                    const count = await Booking.countDocuments({
+                        hotel: req.params.hotelId,
+                        checkInDate: { $lt: nextDate },
+                        checkOutDate: { $gt: targetDate },
+                        services: srv._id
                     });
+
+                    if (count >= srv.dailyCapacity) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Service '${srv.name}' is fully booked on ${targetDate.toISOString().split('T')[0]}`
+                        });
+                    }
                 }
+                currentDate.setDate(currentDate.getDate() + 1);
             }
+        
         }
 
         const booking = await Booking.create(req.body);
@@ -160,10 +208,28 @@ exports.updateBooking = async (req, res, next) => {
             return res.status(401).json({ success: false, message: `User ${req.user.id} is not authorized to update this booking` });
         }
 
-        // Check Services Validation & Capacity On Update
-        const targetServices = req.body.services !== undefined ? req.body.services : booking.services;
-        const targetDate = req.body.bookingDate ? req.body.bookingDate : booking.bookingDate;
+        // Cannot change Booking owner and Hotel when update
+        if (req.body.hotel && req.body.hotel !== booking.hotel.toString()) {
+            return res.status(400).json({ success: false, message: 'Cannot change the hotel of an existing booking' });
+        }
+        if (req.user.role !== 'admin' && req.body.user && req.body.user !== booking.user.toString()) {
+            return res.status(403).json({ success: false, message: 'Cannot change the owner of an existing booking' });
+        }
 
+        const targetCheckIn = req.body.checkInDate ? new Date(req.body.checkInDate) : booking.checkInDate;
+        const targetCheckOut = req.body.checkOutDate ? new Date(req.body.checkOutDate) : booking.checkOutDate;
+        const targetServices = req.body.services !== undefined ? req.body.services : booking.services;
+
+        if (targetCheckOut <= targetCheckIn) {
+            return res.status(400).json({ success: false, message: 'Check-out date must be after check-in date' });
+        }
+
+        const nightDiff = Math.ceil((targetCheckOut.getTime() - targetCheckIn.getTime()) / (1000 * 3600 * 24));
+        if (nightDiff > 3 && req.user.role !== 'admin') {
+            return res.status(400).json({ success: false, message: 'You can only book up to 3 nights per booking' });
+        }
+
+        // Check Services Validation & Capacity On Update
         if (targetServices && Array.isArray(targetServices) && targetServices.length > 0) {
             // 1. Choose maximum 2 services
             if (targetServices.length > 2) {
@@ -184,25 +250,33 @@ exports.updateBooking = async (req, res, next) => {
                 });
             }
 
-            // 3. Check Daily Capacity
-            const bDate = new Date(targetDate);
-            const startDate = new Date(bDate.setHours(0, 0, 0, 0));
-            const endDate = new Date(bDate.setHours(23, 59, 59, 999));
+            let currentDate = new Date(targetCheckIn);
+            currentDate.setHours(0, 0, 0, 0);
+            const lastDate = new Date(targetCheckOut);
+            lastDate.setHours(0, 0, 0, 0);
 
-            for (const srv of foundServices) {
-                const count = await Booking.countDocuments({
-                    _id: { $ne: req.params.id }, // Skip own Booking
-                    hotel: booking.hotel,
-                    bookingDate: { $gte: startDate,$lte: endDate },
-                    services: srv._id
-                });
+            while (currentDate < lastDate) {
+                const targetDate = new Date(currentDate);
+                const nextDate = new Date(currentDate);
+                nextDate.setDate(nextDate.getDate() + 1);
 
-                if (count >= srv.dailyCapacity) {
-                    return res.status(400).json({
-                        success: false,
-                        message: `Service '${srv.name}' is fully booked on this date`
+                for (const srv of foundServices) {
+                    const count = await Booking.countDocuments({
+                        _id: { $ne: req.params.id }, // Skip own Booking
+                        hotel: booking.hotel,
+                        checkInDate: { $lt: nextDate },
+                        checkOutDate: { $gt: targetDate },
+                        services: srv._id
                     });
+
+                    if (count >= srv.dailyCapacity) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Service '${srv.name}' is fully booked on ${targetDate.toISOString().split('T')[0]}`
+                        });
+                    }
                 }
+                currentDate.setDate(currentDate.getDate() + 1);
             }
         }
 

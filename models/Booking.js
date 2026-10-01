@@ -15,6 +15,18 @@ const BookingSchema = new mongoose.Schema({
         ref: 'Hotel',
         required: true
     },
+    services: {
+        type: [{
+            type: mongoose.Schema.ObjectId,
+            ref: 'Service'
+        }],
+        validate: [
+            function(val) {
+                return val.length <= 2;
+            },
+            'You can select up to 2 services only'
+        ]
+    },
     createdAt: {
         type: Date,
         default: Date.now

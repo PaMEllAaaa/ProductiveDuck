@@ -45,4 +45,11 @@ HotelSchema.virtual('bookings', {
     justOne: false
 });
 
+HotelSchema.virtual('services', {
+    ref: 'Service',
+    localField: '_id',
+    foreignField: 'hotel',
+    justOne: false
+});
+
 module.exports = mongoose.model('Hotel', HotelSchema);

@@ -65,9 +65,19 @@ exports.getBooking = async (req, res, next) => {
                 path: 'services',
                 select: 'name description dailyCapacity'
             });
+
         if (!booking) {
             return res.status(404).json({ success: false, message: `No booking with id of ${req.params.id}` });
         }
+
+        // only booking owner and admin can see this booking
+        if ( booking.user.toString() !== req.user.id && req.user.role !== 'admin' ) {
+            return res.status(403).json({
+                success: false,
+                message: 'You are not authorized to view this booking'
+            });
+        }
+
         res.status(200).json({ success: true, data: booking });
     } catch (err) {
         console.log(err.stack);
@@ -131,7 +141,7 @@ exports.addBooking = async (req, res, next) => {
 
         // Maximum Booking of 3 nights
         const nightDiff = Math.ceil((cOut.getTime() - cIn.getTime()) / (1000 * 3600 * 24));
-        if (nightDiff > 3 && req.user.role !== 'admin') {
+        if (nightDiff > 3) {
             return res.status(400).json({ success: false, message: 'You can only book up to 3 nights per booking' });
         }
 
@@ -225,7 +235,7 @@ exports.updateBooking = async (req, res, next) => {
         }
 
         const nightDiff = Math.ceil((targetCheckOut.getTime() - targetCheckIn.getTime()) / (1000 * 3600 * 24));
-        if (nightDiff > 3 && req.user.role !== 'admin') {
+        if (nightDiff > 3) {
             return res.status(400).json({ success: false, message: 'You can only book up to 3 nights per booking' });
         }
 

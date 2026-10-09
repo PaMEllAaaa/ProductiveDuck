@@ -1,6 +1,7 @@
 const Booking = require('../models/Booking');
 const Hotel = require('../models/Hotel');
 const Service = require('../models/Service');
+const User = require('../models/User');
 
 //@desc Get all bookings
 //@route GET /api/v1/bookings
@@ -42,12 +43,64 @@ exports.getBookings = async (req, res, next) => {
             });
         }
     }
+
+    // Select Fields
+    if (req.query.select) {
+        const fields = req.query.select.split(',').join(' ');
+        query = query.select(fields);
+    }
+    // Sort Fields
+    if (req.query.sort) {
+        const sortBy = req.query.sort.split(',').join(' ');
+        query = query.sort(sortBy);
+    } else {
+        query = query.sort('-createdAt');
+    }
+
+    // Pagination
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 25;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
     try {
+        if (req.params.hotelId) {
+            query = query.where('hotel').equals(req.params.hotelId);
+        }
+
+        const total = await Booking.countDocuments(query.getFilter());
+
+        query = query.skip(startIndex).limit(limit);
+
+        // Execute query
         const bookings = await query;
-        res.status(200).json({ success: true, count: bookings.length, data: bookings });
+
+        // Pagination result
+        const pagination = {};
+
+        if (endIndex < total) {
+            pagination.next = {
+                page: page + 1,
+                limit
+            };
+        }
+
+        if (startIndex > 0) {
+            pagination.prev = {
+                page: page - 1,
+                limit
+            };
+        }
+
+        res.status(200).json({
+            success: true,
+            count: bookings.length,
+            pagination,
+            data: bookings
+        });
     } catch (err) {
         console.log(err.stack);
-        return res.status(500).json({ success: false, message: 'Cannot find Booking' });
+        res.status(400).json({ success: false });
     }
 };
 
@@ -117,13 +170,13 @@ exports.addBooking = async (req, res, next) => {
         console.log(req.body);
 
         //add user Id to req.body
-        req.body.user = req.user.id;
-        //Check for existed booking
-        const existedBookings = await Booking.find({ user: req.user.id });
-        //If the user is not an admin, they can only create 3 booking.
-        if (existedBookings.length >= 3 && req.user.role !== 'admin') {
-            return res.status(400).json({ success: false, message: `The user with ID ${req.user.id} has already created 3 bookings` });
-        }
+        //req.body.user = req.user.id; //มันไป replace user_id = admin
+        // //Check for existed booking
+        // const existedBookings = await Booking.find({ user: req.user.id });
+        // //If the user is not an admin, they can only create 3 booking.
+        // if (existedBookings.length >= 3 && req.user.role !== 'admin') {
+        //     return res.status(400).json({ success: false, message: `The user with ID ${req.user.id} has already created 3 bookings` });
+        // }
 
         const { checkInDate, checkOutDate, services } = req.body;
 

@@ -16,7 +16,7 @@ exports.getBookings = async (req, res, next) => {
             select: 'name province tel'
         })
         .populate({
-            path: 'services',
+            path: 'serviceSelections.services',
             select: 'name description'
         });
     } else { //If you are an admin, you can see all bookings!
@@ -28,7 +28,7 @@ exports.getBookings = async (req, res, next) => {
                 select: 'name province tel'
             })
             .populate({ 
-                path: 'services',
+                path: 'serviceSelections.services',
                 select: 'name description'
             });
         } else {
@@ -38,7 +38,7 @@ exports.getBookings = async (req, res, next) => {
                 select: 'name province tel'
             })
             .populate({ 
-                path: 'services',
+                path: 'serviceSelections.services',
                 select: 'name description'
             });
         }
@@ -115,7 +115,7 @@ exports.getBooking = async (req, res, next) => {
                 select: 'name description tel'
             })
             .populate({
-                path: 'services',
+                path: 'serviceSelections.services',
                 select: 'name description dailyCapacity'
             });
 

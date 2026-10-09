@@ -7,47 +7,54 @@ const User = require('../models/User');
 //@route GET /api/v1/bookings
 //@access Public
 exports.getBookings = async (req, res, next) => {
-    let query;
+    let filter = {};
+
     // General users can see only their own bookings!
     if (req.user.role !== 'admin') {
-        query = Booking.find({ user: req.user.id })
-        .populate({
-            path: 'hotel',
-            select: 'name province tel'
-        })
-        .populate({
-            path: 'serviceSelections.services',
-            select: 'name description'
-        });
-    } else { //If you are an admin, you can see all bookings!
-        if (req.params.hotelId) {
-            console.log(req.params.hotelId);
-            query = Booking.find({ hotel: req.params.hotelId })
-            .populate({
+        filter.user = req.user.id;
+    }
+
+    if (req.params.hotelId) {
+        filter.hotel = req.params.hotelId;
+    }
+
+    let query = Booking.find(filter);
+    
+    // Select Fields
+    if (req.query.select) {
+        const selectFields = req.query.select.split(',');
+
+        if (selectFields.includes('hotel')) {
+            query = query.populate({
                 path: 'hotel',
                 select: 'name province tel'
-            })
-            .populate({ 
-                path: 'serviceSelections.services',
-                select: 'name description'
             });
-        } else {
-            query = Booking.find()
-            .populate({
-                path: 'hotel',
-                select: 'name province tel'
-            })
-            .populate({ 
-                path: 'serviceSelections.services',
+        }
+        if (selectFields.includes('services') || selectFields.includes('serviceSelections')) {
+            query = query.populate({
+                path: 'serviceSelections',
                 select: 'name description'
             });
         }
-    }
+        if (selectFields.includes('user')) {
+            query = query.populate({
+                path: 'user',
+                select: 'name email'
+            });
+        }
 
-    // Select Fields
-    if (req.query.select) {
-        const fields = req.query.select.split(',').join(' ');
+        const fields = selectFields.join(' ');
         query = query.select(fields);
+    } else {
+        query = query
+            .populate({
+                path: 'hotel',
+                select: 'name province tel'
+            })
+            .populate({
+                path: 'serviceSelections.services',
+                select: 'name description'
+            });
     }
     // Sort Fields
     if (req.query.sort) {
@@ -100,7 +107,7 @@ exports.getBookings = async (req, res, next) => {
         });
     } catch (err) {
         console.log(err.stack);
-        res.status(400).json({ success: false });
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 

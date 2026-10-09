@@ -10,7 +10,6 @@ const router = express.Router();
 const {protect,authorize} = require('../middleware/auth');
 
 // Re-route into other resource routers
-router.use('/:hotelId/bookings', bookingRouter);
 router.use('/:hotelId/services', serviceRouter);
 
 router.route('/').get(getHotels).post(protect, authorize('admin'), createHotel);

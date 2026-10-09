@@ -38,13 +38,6 @@ const HotelSchema = new mongoose.Schema({
 });
 
 // Reverse populate with virtuals
-HotelSchema.virtual('bookings', {
-    ref: 'Booking',
-    localField: '_id',
-    foreignField: 'hotel',
-    justOne: false
-});
-
 HotelSchema.virtual('services', {
     ref: 'Service',
     localField: '_id',

@@ -20,13 +20,21 @@ exports.getHotels = async (req, res, next) => {
     // Create query string
     let queryStr = JSON.stringify(reqQuery);
     queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
+
     query = Hotel.find(JSON.parse(queryStr))
-    .populate('services');
 
     // Select Fields
     if (req.query.select) {
-        const fields = req.query.select.split(',').join(' ');
+        const selectFields = req.query.select.split(',');
+
+        if (selectFields.includes('services')) {
+            query = query.populate('services');
+        }
+
+        const fields = selectFields.join(' ');
         query = query.select(fields);
+    } else {
+        query = query.populate('services');
     }
     // Sort Fields
     if (req.query.sort) {

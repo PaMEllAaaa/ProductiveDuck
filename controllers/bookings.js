@@ -30,9 +30,9 @@ exports.getBookings = async (req, res, next) => {
                 select: 'name province tel'
             });
         }
-        if (selectFields.includes('services')) {
+        if (selectFields.includes('services') || selectFields.includes('serviceSelections')) {
             query = query.populate({
-                path: 'services',
+                path: 'serviceSelections',
                 select: 'name description'
             });
         }
@@ -52,7 +52,7 @@ exports.getBookings = async (req, res, next) => {
                 select: 'name province tel'
             })
             .populate({
-                path: 'services',
+                path: 'serviceSelections.services',
                 select: 'name description'
             });
     }
@@ -107,7 +107,7 @@ exports.getBookings = async (req, res, next) => {
         });
     } catch (err) {
         console.log(err.stack);
-        res.status(400).json({ success: false });
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 

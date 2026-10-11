@@ -83,7 +83,7 @@ exports.getHotels = async (req, res, next) => {
 //@access Public
 exports.getHotel = async(req, res, next) => {
     try {
-        const hotel = await Hotel.findById(req.params.id);
+        const hotel = await Hotel.findById(req.params.id).populate('services');
         if (!hotel) {
             return res.status(400).json({success: false});
         }

@@ -1,6 +1,29 @@
 const Booking = require('../models/Booking');
 const Hotel = require('../models/Hotel');
 const Service = require('../models/Service');
+const User = require('../models/User');
+
+const getBookingDay = (value) => {
+    // date object from MongoDB e.g. 2026-11-01T00:00:00.000Z
+    if (value instanceof Date) {
+        if (Number.isNaN(value.getTime())) {
+            return null; 
+        }
+        return new Date(value.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    }
+
+    // string object from request e.g. 2026-02-30
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return null;
+    }
+
+    const date = new Date(`${value}T00:00:00.000Z`);
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+        return null;
+    }
+
+    return value;
+};
 
 //@desc Get all bookings
 //@route GET /api/v1/bookings
@@ -31,7 +54,7 @@ exports.getBookings = async (req, res, next) => {
         }
         if (selectFields.includes('services') || selectFields.includes('serviceSelections')) {
             query = query.populate({
-                path: 'serviceSelections',
+                path: 'serviceSelections.services',
                 select: 'name description'
             });
         }

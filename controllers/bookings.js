@@ -25,6 +25,128 @@ const getBookingDay = (value) => {
     return value;
 };
 
+const validateBookingData = async (
+    hotelId,
+    checkInDate,
+    checkOutDate,
+    serviceSelections,
+    oldBooking = null
+) => {
+    // check valid day
+    const checkInDay = getBookingDay(checkInDate);
+    const checkOutDay = getBookingDay(checkOutDate);
+
+    if (!checkInDay || !checkOutDay) {
+        return 'Please provide valid dates in YYYY-MM-DD format';
+    }
+
+    const nights = (checkOut - checkIn) / (1000 * 60 * 60 * 24);
+    if (nights < 1 || nights > 3) {
+        return 'You can book between 1 and 3 nights';
+    }
+
+    // check valid services
+    if (!Array.isArray(serviceSelections)) {
+        return 'serviceSelections must be an array';
+    }
+
+    const selectedDates = [];
+    for (const selection of serviceSelections) { 
+        if (!selection || typeof selection !== 'object') {
+            return 'Invalid service selection';
+        }
+
+        const serviceDay = getBookingDay(selection.date);
+
+        if (!serviceDay) {
+            return 'Please provide a valid service date in YYYY-MM-DD format';
+        }
+
+        if (serviceDay < checkInDay || serviceDay >= checkOutDay) {
+            return 'Service date must be within the stay, excluding check-out day';
+        }
+
+        if (selectedDates.includes(serviceDay)) {
+            return 'Cannot have duplicate service dates';
+        }
+
+        selectedDates.push(serviceDay);
+
+        if (!Array.isArray(selection.services)) {
+            return 'services must be an array';
+        }
+
+        if (selection.services.length > 2) {
+            return 'You can select up to 2 services per day';
+        }
+
+        // Check valid service in day of selection
+        const selectedIds = [];
+        for (const serviceId of selection.services) {
+            const id = String(serviceId).toLowerCase();
+
+            if (!/^[a-f0-9]{24}$/.test(id)) {
+                return 'Invalid service ID';
+            }
+
+            if (selectedIds.includes(id)) {
+                return 'Cannot select the same service twice in one day';
+            }
+
+            selectedIds.push(id);
+
+            const service = await Service.findOne({
+                _id: id,
+                hotel: hotelId
+            });
+
+            if (!service) {
+                return 'Service not found in this hotel';
+            }
+
+            // update case
+            let alreadySelected = false;
+
+            if (oldBooking) {
+                alreadySelected = oldBooking.serviceSelections.some(
+                    item =>
+                        item.date === serviceDay &&
+                        item.services.some(
+                            oldId => oldId.toString() === service._id.toString()
+                        )
+                );
+            }
+
+            if (!service.isActive && !alreadySelected) {
+                return `Service '${service.name}' is inactive`;
+            }
+
+            // count every user who booked this day
+            const filter = {
+                hotel: hotelId,
+                serviceSelections: {
+                    $elemMatch: {
+                        date: serviceDay,
+                        services: service._id
+                    }
+                }
+            };
+
+            if (oldBooking) { // not include this booking if this is oldbooking
+                filter._id = { $ne: oldBooking._id };
+            }
+
+            const booked = await Booking.countDocuments(filter);
+
+            if (booked >= service.dailyCapacity) {
+                return `Service '${service.name}' is fully booked on ${serviceDay}`;
+            }
+        }
+    }
+
+    return null;
+};
+
 //@desc Get all bookings
 //@route GET /api/v1/bookings
 //@access Public

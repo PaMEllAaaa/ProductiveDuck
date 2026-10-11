@@ -1,5 +1,6 @@
 const Service = require('../models/Service');
 const Hotel = require('../models/Hotel');
+const Booking = require('../models/Booking');
 
 //@desc Get all services
 //@route  GET /api/v1/services (admin)
@@ -8,6 +9,27 @@ const Hotel = require('../models/Hotel');
 exports.getServices = async (req, res, next) => {
     try {
         let query;
+        const { date } = req.query;
+
+        if (date !== undefined) {
+            if (
+                typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Please provide a date in YYYY-MM-DD format'
+                });
+            }
+
+            const parsedDate = new Date(`${date}T00:00:00.000Z`);
+
+            if ( Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Please provide a valid date'
+                });
+            }
+        }
 
         if (req.params.hotelId) {
             const hotel = await Hotel.findById(req.params.hotelId);
@@ -19,7 +41,7 @@ exports.getServices = async (req, res, next) => {
                 });
             }
 
-            query = Service.find({ hotel: req.params.hotelId });
+            query = Service.find({ hotel: hotel._id });
         } else {
             if (req.user.role !== 'admin') {
                 return res.status(403).json({
@@ -31,18 +53,52 @@ exports.getServices = async (req, res, next) => {
             query = Service.find();
         }
 
-        const services = await query;
+        const services = await query.sort('name');
+
+        if (date === undefined) {
+            return res.status(200).json({
+                success: true,
+                count: services.length,
+                data: services
+            });
+        }
+
+        // data of this service
+        const data = [];
+
+        for (const service of services) {
+            const booked = await Booking.countDocuments({
+                hotel: service.hotel,
+                serviceSelections: {
+                    $elemMatch: {
+                        date,
+                        services: service._id
+                    }
+                }
+            });
+
+            const remaining = Math.max(0,service.dailyCapacity - booked);
+
+            data.push({
+                ...service.toObject(),
+                booked,
+                remaining,
+                available: service.isActive && remaining > 0
+            });
+        }
 
         return res.status(200).json({
             success: true,
-            count: services.length,
-            data: services
+            date,
+            count: data.length,
+            data
         });
     } catch (err) {
         console.log(err);
 
         return res.status(400).json({
-            success: false
+            success: false,
+            message: err.message
         });
     }
 };

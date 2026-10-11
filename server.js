@@ -8,6 +8,7 @@ const hotels = require('./routes/hotels');
 const bookings = require('./routes/bookings');
 const auth = require('./routes/auth');
 const services = require('./routes/services');
+const reports = require('./routes/reports');
 
 dotenv.config({ path: './config/config.env' });
 
@@ -27,6 +28,7 @@ app.use('/api/v1/hotels',hotels);
 app.use('/api/v1/bookings',bookings);
 app.use('/api/v1/auth',auth);
 app.use('/api/v1/services', services);
+app.use('/api/v1/reports', reports);
 
 
 const PORT = process.env.PORT || 5000;

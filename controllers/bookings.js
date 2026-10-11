@@ -4,12 +4,12 @@ const Service = require('../models/Service');
 const User = require('../models/User');
 
 const getBookingDay = (value) => {
-    // date object from MongoDB e.g. 2026-11-01T00:00:00.000Z
+    // date object from MongoDB e.g. 2026-11-01T00:00:00.000Z (UTC Only)
     if (value instanceof Date) {
         if (Number.isNaN(value.getTime())) {
             return null; 
         }
-        return new Date(value.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        return value.toISOString().slice(0, 10);
     }
 
     // string object from request e.g. 2026-02-30
@@ -40,7 +40,7 @@ const validateBookingData = async (
         return 'Please provide valid dates in YYYY-MM-DD format';
     }
 
-    const nights = (checkOut - checkIn) / (1000 * 60 * 60 * 24);
+    const nights = (new Date(checkOutDay) - new Date(checkInDay)) / (1000 * 60 * 60 * 24);
     if (nights < 1 || nights > 3) {
         return 'You can book between 1 and 3 nights';
     }
@@ -174,7 +174,7 @@ exports.getBookings = async (req, res, next) => {
                 select: 'name province tel'
             });
         }
-        if (selectFields.includes('services') || selectFields.includes('serviceSelections')) {
+        if (selectFields.includes('serviceSelections')) {
             query = query.populate({
                 path: 'serviceSelections.services',
                 select: 'name description'

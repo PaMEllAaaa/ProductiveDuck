@@ -2,43 +2,37 @@
     {
         "hotel": "REPLACE_WITH_HOTEL1_ID",
         "name": "fitness",
-        "description": "บริการห้องออกกำลังกาย",
-        "dailyCapacity": 35,
+        "dailyCapacity": 5,
         "isActive": true
     },
     {
         "hotel": "REPLACE_WITH_HOTEL1_ID",
         "name": "spa",
-        "description": "บริการห้องนวดสปา",
         "dailyCapacity": 10,
         "isActive": true
     },
     {
         "hotel": "REPLACE_WITH_HOTEL1_ID",
         "name": "sauna",
-        "description": "บริการห้องซาวน่า",
-        "dailyCapacity": 15,
+        "dailyCapacity": 5,
         "isActive": true
     },
     {
         "hotel": "REPLACE_WITH_HOTEL1_ID",
         "name": "swimming pool",
-        "description": "บริการสระว่ายน้ำ",
-        "dailyCapacity": 25,
+        "dailyCapacity": 10,
         "isActive": true
     },
     {
         "hotel": "REPLACE_WITH_HOTEL1_ID",
         "name": "breakfast",
-        "description": "บริการอาหารเช้า",
-        "dailyCapacity": 50,
+        "dailyCapacity": 8,
         "isActive": true
     },
     {
         "hotel": "REPLACE_WITH_HOTEL1_ID",
-        "name": "karaoke room",
-        "description": "ห้องคาราโอเกะ",
-        "dailyCapacity": 30,
+        "name": "karaoke",
+        "dailyCapacity": 3,
         "isActive": true
     }
 ]

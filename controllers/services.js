@@ -83,7 +83,7 @@ exports.getServices = async (req, res, next) => {
                 ...service.toObject(),
                 booked,
                 remaining,
-                available: service.isActive && remaining > 0
+                available: remaining > 0
             });
         }
 
@@ -158,10 +158,20 @@ exports.getService = async (req, res, next) => {
 
 //@desc Add service
 //@route POST /api/v1/hotels/:hotelId/services
+//@route POST /api/v1/services
 //@access Private
 exports.createService = async(req, res, next) => {
     try {
-        const hotel = await Hotel.findById(req.params.hotelId);
+        const hotelId = req.params.hotelId || req.body.hotel;
+
+        if (!hotelId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please specify a hotel ID'
+            });
+        }
+
+        const hotel = await Hotel.findById(hotelId);
 
         if (!hotel) {
             return res.status(404).json({
@@ -170,14 +180,13 @@ exports.createService = async(req, res, next) => {
             });
         }
 
-        const { name, description, dailyCapacity, isActive } = req.body;
+        const { name, description, dailyCapacity } = req.body;
 
         const service = await Service.create({
             hotel: hotel._id,
             name,
             description,
-            dailyCapacity,
-            isActive
+            dailyCapacity
         });
 
         return res.status(201).json({
@@ -286,10 +295,6 @@ exports.updateService = async (req, res, next) => {
             service.dailyCapacity = newCapacity;
         }
 
-        if (req.body.isActive !== undefined) {
-            service.isActive = req.body.isActive;
-        }
-
         await service.save();
 
         return res.status(200).json({
@@ -333,7 +338,7 @@ exports.deleteService = async (req, res, next) => {
         if (booking) {
             return res.status(400).json({
                 success: false,
-                message: 'Cannot delete a service used in bookings. Set isActive to false instead'
+                message: 'Cannot delete a service used in bookings'
             });
         }
 

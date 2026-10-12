@@ -104,23 +104,6 @@ const validateBookingData = async (
                 return 'Service not found in this hotel';
             }
 
-            // update case
-            let alreadySelected = false;
-
-            if (oldBooking) {
-                alreadySelected = oldBooking.serviceSelections.some(
-                    item =>
-                        item.date === serviceDay &&
-                        item.services.some(
-                            oldId => oldId.toString() === service._id.toString()
-                        )
-                );
-            }
-
-            if (!service.isActive && !alreadySelected) {
-                return `Service '${service.name}' is inactive`;
-            }
-
             // count every user who booked this day
             const filter = {
                 hotel: hotelId,

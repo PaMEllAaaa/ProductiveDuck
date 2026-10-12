@@ -26,10 +26,6 @@ const ServiceSchema = new mongoose.Schema({
             message: 'Daily capacity must be an integer'
         }
     },
-    isActive: {
-        type: Boolean,
-        default: true
-    },
     createdAt: {
         type: Date,
         default: Date.now

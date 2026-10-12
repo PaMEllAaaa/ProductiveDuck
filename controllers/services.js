@@ -224,6 +224,66 @@ exports.updateService = async (req, res, next) => {
 
         if (req.body.dailyCapacity !== undefined) {
             service.dailyCapacity = req.body.dailyCapacity;
+
+            // cap < 0
+            if (!Number.isInteger(newCapacity) || newCapacity < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Daily capacity must be a non-negative integer'
+                });
+            }
+
+            // Check if cap < all booked
+            if (newCapacity < service.dailyCapacity) {
+                const today = new Date(Date.now()).toISOString().slice(0, 10);
+            
+                const bookings = await Booking.find({
+                    hotel: service.hotel,
+                    serviceSelections: {
+                        $elemMatch: {
+                            date: { $gte: today },
+                            services: service._id
+                        }
+                    }
+                }).select('serviceSelections');
+
+                const bookedByDate = {};
+
+                for (const booking of bookings) {
+                    const countedDates = [];
+
+                    for (const selection of booking.serviceSelections) {
+                        if (selection.date < today) {
+                            continue;
+                        }
+
+                        const hasService = selection.services.some(
+                            id => id.toString() === service._id.toString()
+                        );
+
+                        if (!hasService || countedDates.includes(selection.date)) {
+                            continue;
+                        }
+
+                        countedDates.push(selection.date);
+
+                        bookedByDate[selection.date] = (bookedByDate[selection.date] || 0) + 1;
+                    }
+                }
+
+                for (const date of Object.keys(bookedByDate).sort()) {
+                    const booked = bookedByDate[date];
+
+                    if (newCapacity < booked) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Cannot reduce capacity to ${newCapacity}. There are already ${booked} bookings on ${date}`
+                        });
+                    }
+                }
+            }
+
+            service.dailyCapacity = newCapacity;
         }
 
         if (req.body.isActive !== undefined) {

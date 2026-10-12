@@ -106,16 +106,26 @@ exports.createHotel = async(req, res, next) => {
 //@access Private
 exports.updateHotel = async (req, res, next) => {
     try {
+        if (req.body.name !== undefined || req.body.address !== undefined) {
+            return res.status(400).json({
+                success: false,
+                message: 'You are not allowed to update the hotel name or address'
+            });
+        }
+
         const hotel = await Hotel.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
         });
+
         if (!hotel) {
-            return res.status(400).json({success: false});
+            return res.status(404).json({ success: false, message: `No hotel with the id of ${req.params.id}` });
         }
-        res.status(200).json({success: true, data: hotel});
+
+        res.status(200).json({ success: true, data: hotel });
     } catch (err) {
-        res.status(400).json({success: false});
+        console.log(err.stack);
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 

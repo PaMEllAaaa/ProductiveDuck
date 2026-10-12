@@ -16,7 +16,7 @@ exports.getReports = async (req, res, next) => {
     let query = Report.find(filter);
 
     // Select Fields
-    if (req.query.select) {
+    if (req.query.select && req.user.role === 'admin') {
         const fields = req.query.select.split(',').join(' ');
         query = query.select(fields);
     }
@@ -35,8 +35,16 @@ exports.getReports = async (req, res, next) => {
 
     // Sort Fields
     if (req.query.sort) {
-        const sortBy = req.query.sort.split(',').join(' ');
-        query = query.sort(sortBy);
+        if (req.user.role === 'admin') {
+            const sortBy = req.query.sort.split(',').join(' ');
+            query = query.sort(sortBy);
+        } else {
+            if (req.query.sort === 'createdAt' || req.query.sort === '-createdAt') {
+                query = query.sort(req.query.sort);
+            } else {
+                query = query.sort('-createdAt'); 
+            }
+        }
     } else {
         query = query.sort('-createdAt');
     }
@@ -106,6 +114,13 @@ exports.addReport = async (req, res, next) => {
 
         if (booking.user.toString() !== req.user.id) {
             return res.status(403).json({ success: false, message: 'You can only report issues for your own bookings' });
+        }
+
+        if (!booking.checkOutDate) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'This booking does not have a valid check-out date' 
+            });
         }
 
         const currentDate = new Date();

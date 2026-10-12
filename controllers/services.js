@@ -331,16 +331,11 @@ exports.deleteService = async (req, res, next) => {
             });
         }
 
-        const booking = await Booking.findOne({
-            'serviceSelections.services': service._id
-        }).select('_id');
-
-        if (booking) {
-            return res.status(400).json({
-                success: false,
-                message: 'Cannot delete a service used in bookings'
-            });
-        }
+        // Remove only this service from every day's selections.
+        await Booking.updateMany(
+            { 'serviceSelections.services': service._id },
+            { $pull: { 'serviceSelections.$[].services': service._id } }
+        );
 
         await Service.deleteOne({ _id: service._id });
 

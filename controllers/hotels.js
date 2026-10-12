@@ -1,5 +1,7 @@
 const Hotel = require('../models/Hotel');
 const Booking = require('../models/Booking');
+const Service = require('../models/Service');
+const Report = require('../models/Report');
 
 //@desc Get all hotels
 //@route GET /api/v1/hotels
@@ -128,7 +130,17 @@ exports.deleteHotel = async (req, res, next) => {
         if (!hotel) {
             return res.status(404).json({success: false, message: `Hotel not found with id of ${req.params.id}`});
         }
-        await Booking.deleteMany({ hotel: req.params.id });
+        const bookings = await Booking.find({ hotel: hotel._id }).select('_id');
+        const bookingIds = bookings.map(booking => booking._id);
+
+        await Report.deleteMany({
+            $or: [
+                { hotel: hotel._id },
+                { booking: { $in: bookingIds } }
+            ]
+        });
+        await Booking.deleteMany({ hotel: hotel._id });
+        await Service.deleteMany({ hotel: hotel._id });
         await Hotel.deleteOne({ _id: req.params.id });
         
         res.status(200).json({success: true, data: {}});

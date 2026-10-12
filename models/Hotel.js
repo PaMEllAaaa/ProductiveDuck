@@ -12,7 +12,7 @@ const HotelSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add an address']
     },
-    district: {
+    /*district: {
         type: String,
         required: [true, 'Please add a district']
     },
@@ -24,14 +24,14 @@ const HotelSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add a postalcode'],
         maxlength: [5, 'Postalcode cannot be more than 5 digits']
-    },
+    },*/
     tel: {
         type: String
     },
-    region: {
+    /*region: {
         type: String,
         required: [true, 'Please add a region']
-    }
+    }*/
 },{
     toJSON: { virtuals: true },
     toObject: { virtuals: true }

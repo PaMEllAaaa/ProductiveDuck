@@ -154,7 +154,7 @@ exports.getBookings = async (req, res, next) => {
         if (selectFields.includes('hotel')) {
             query = query.populate({
                 path: 'hotel',
-                select: 'name province tel'
+                select: 'name address tel'
             });
         }
         if (selectFields.includes('serviceSelections')) {
@@ -176,7 +176,7 @@ exports.getBookings = async (req, res, next) => {
         query = query
             .populate({
                 path: 'hotel',
-                select: 'name province tel'
+                select: 'name address tel'
             })
             .populate({
                 path: 'serviceSelections.services',

@@ -99,8 +99,26 @@ exports.getHotel = async(req, res, next) => {
 //@route POST /api/v1/hotels
 //@access Private
 exports.createHotel = async(req, res, next) => {
-    const hotel = await Hotel.create(req.body);
-    res.status(201).json({success: true, data: hotel});
+    try {
+        const { services, ...hotelData } = req.body;
+
+        const hotel = await Hotel.create(hotelData);
+
+        if (services && Array.isArray(services) && services.length > 0) {
+            const servicesWithHotelId = services.map(srv => ({
+                ...srv,
+                hotel: hotel._id
+            }));
+            await Service.insertMany(servicesWithHotelId);
+        }
+
+        const createdHotel = await Hotel.findById(hotel._id).populate('services');
+
+        res.status(201).json({ success: true, data: createdHotel });
+    } catch (err) {
+        console.log(err.stack);
+        res.status(400).json({ success: false, message: err.message });
+    }
 };
 
 //@desc Update hotel
@@ -108,23 +126,61 @@ exports.createHotel = async(req, res, next) => {
 //@access Private
 exports.updateHotel = async (req, res, next) => {
     try {
-        if (req.body.name !== undefined || req.body.address !== undefined) {
+        const allowedKeys = ['tel', 'services'];
+        const providedKeys = Object.keys(req.body);
+
+        const hasInvalidKeys = providedKeys.some(
+            key => !allowedKeys.includes(key) || key.startsWith('$')
+        );
+
+        if (hasInvalidKeys) {
             return res.status(400).json({
                 success: false,
-                message: 'You are not allowed to update the hotel name or address'
+                message: 'Invalid request. You are only allowed to update "tel" and "services".'
             });
         }
 
-        const hotel = await Hotel.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true
-        });
-
+        let hotel = await Hotel.findById(req.params.id);
         if (!hotel) {
             return res.status(404).json({ success: false, message: `No hotel with the id of ${req.params.id}` });
         }
 
-        res.status(200).json({ success: true, data: hotel });
+        if (req.body.tel !== undefined) {
+            hotel = await Hotel.findByIdAndUpdate(
+                req.params.id,
+                { tel: req.body.tel },
+                { new: true, runValidators: true }
+            );
+        }
+
+        if (req.body.services && Array.isArray(req.body.services)) {
+            const existingServices = await Service.find({ hotel: hotel._id });
+            const existingServiceIds = existingServices.map(s => s._id.toString());
+
+            const incomingServices = req.body.services;
+            const incomingServiceIds = incomingServices
+                .filter(s => s._id)
+                .map(s => s._id.toString());
+
+            const servicesToDelete = existingServiceIds.filter(id => !incomingServiceIds.includes(id));
+            if (servicesToDelete.length > 0) {
+                await Service.deleteMany({ _id: { $in: servicesToDelete } });
+            }
+
+            for (let srv of incomingServices) {
+                if (srv._id && existingServiceIds.includes(srv._id.toString())) {
+                    await Service.findByIdAndUpdate(srv._id, srv, { runValidators: true });
+                } else {
+                    const newSrv = { ...srv, hotel: hotel._id };
+                    delete newSrv._id;
+                    await Service.create(newSrv);
+                }
+            }
+        }
+
+        const updatedHotel = await Hotel.findById(req.params.id).populate('services');
+
+        res.status(200).json({ success: true, data: updatedHotel });
     } catch (err) {
         console.log(err.stack);
         res.status(400).json({ success: false, message: err.message });

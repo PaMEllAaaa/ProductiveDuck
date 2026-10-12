@@ -223,7 +223,7 @@ exports.updateService = async (req, res, next) => {
         }
 
         if (req.body.dailyCapacity !== undefined) {
-            service.dailyCapacity = req.body.dailyCapacity;
+            const newCapacity = req.body.dailyCapacity;
 
             // cap < 0
             if (!Number.isInteger(newCapacity) || newCapacity < 0) {
@@ -323,6 +323,17 @@ exports.deleteService = async (req, res, next) => {
             return res.status(404).json({
                 success: false,
                 message: 'Service not found in this hotel'
+            });
+        }
+
+        const booking = await Booking.findOne({
+            'serviceSelections.services': service._id
+        }).select('_id');
+
+        if (booking) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot delete a service used in bookings. Set isActive to false instead'
             });
         }
 

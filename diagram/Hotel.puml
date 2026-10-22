@@ -1,0 +1,57 @@
+@startuml Hotel Booking System Use Case Diagram
+left to right direction
+actor "User" as user
+rectangle "Hotel Booking System" as HotelBookingSystem {
+    package "Account Management" as AccountManagement {
+        usecase "Register" as register
+        usecase "Log in / log out" as loginlogout
+    }
+    package "Hotel Booking" as HotelBooking {
+        usecase "Create hotel booking" as createHotelBooking
+        usecase "View hotel booking" as viewHotelBooking
+        usecase "Edit hotel booking" as editHotelBooking
+        usecase "Delete hotel booking" as deleteHotelBooking
+    }
+    package "Hotel Management" as HotelManagement {
+        usecase "Create hotel information" as createHotelInfo
+        usecase "Create service" as createService
+        usecase "Update service" as updateService
+        usecase "View hotel information" as viewHotelInfo
+        usecase "Edit hotel information" as editHotelInfo
+        usecase "Delete hotel information" as deleteHotelInfo
+    } 
+    package "Problem Report Management" as ReportManagement {
+        usecase "Create report" as createReport
+        usecase "View report" as viewReport
+        usecase "Delete report" as deleteReport
+    }
+
+}
+
+user -- register
+user -- loginlogout
+user -- createHotelBooking
+user -- viewHotelBooking
+user -- editHotelBooking
+user -- deleteHotelBooking
+user -- viewHotelInfo
+user -- createReport
+user -- viewReport
+
+createHotelInfo .down.> createService : <<include>>
+updateService .down.> editHotelInfo : <<extend>>
+
+actor "Admin" as admin
+register -- admin
+loginlogout -- admin
+viewHotelBooking -- admin
+editHotelBooking -- admin
+deleteHotelBooking -- admin
+createHotelInfo -- admin
+viewHotelInfo -- admin
+editHotelInfo -- admin
+deleteHotelInfo -- admin
+viewReport -- admin
+deleteReport -- admin
+
+@enduml

@@ -359,8 +359,8 @@ exports.addBooking = async (req, res, next) => {
         const booking = await Booking.create({
             user: userId,
             hotel: hotel._id,
-            checkInDate: body.checkInDate,
-            checkOutDate: body.checkOutDate,
+            checkInDate: new Date(`${getBookingDay(body.checkInDate)}T00:00:00.000Z`),
+            checkOutDate: new Date(`${getBookingDay(body.checkOutDate)}T00:00:00.000Z`),
             serviceSelections
         });
 
@@ -443,8 +443,8 @@ exports.updateBooking = async (req, res, next) => {
         }
 
         const updateData = {
-            checkInDate: targetCheckIn,
-            checkOutDate: targetCheckOut,
+            checkInDate: new Date(`${getBookingDay(targetCheckIn)}T00:00:00.000Z`),
+            checkOutDate: new Date(`${getBookingDay(targetCheckOut)}T00:00:00.000Z`),
             serviceSelections: targetSelections
         };
 

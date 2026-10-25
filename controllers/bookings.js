@@ -4,25 +4,34 @@ const Service = require('../models/Service');
 const User = require('../models/User');
 
 const getBookingDay = (value) => {
-    // date object from MongoDB e.g. 2026-11-01T00:00:00.000Z (UTC Only)
+    // recieve Date from MongoDB
     if (value instanceof Date) {
         if (Number.isNaN(value.getTime())) {
-            return null; 
+            return null;
         }
+
         return value.toISOString().slice(0, 10);
     }
 
-    // string object from request e.g. 2026-02-30
-    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    if (typeof value !== 'string') {
         return null;
     }
 
-    const date = new Date(`${value}T00:00:00.000Z`);
-    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
-        return null;
+    // recieve YYYY-MM-DD from frontend
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        const date = new Date(`${value}T00:00:00.000Z`);
+
+        if (
+            Number.isNaN(date.getTime()) ||
+            date.toISOString().slice(0, 10) !== value
+        ) {
+            return null;
+        }
+
+        return value;
     }
 
-    return value;
+    return null;
 };
 
 const validateBookingData = async (

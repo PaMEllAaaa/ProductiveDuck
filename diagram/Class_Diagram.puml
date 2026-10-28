@@ -1,0 +1,93 @@
+@startuml
+
+class User {
+  - id : ObjectId
+  - name : String
+  - tel : String
+  - email : String
+  - role : String
+  - password : String
+  - resetPasswordToken : String
+  - resetPasswordExpire : Date
+  - createdAt : Date
+  --
+  + register()
+  + login()
+  + getMe()
+  + logout()
+}
+
+class Hotel {
+  - id : ObjectId
+  - name : String
+  - address : String
+  - tel : String
+  --
+  + getHotels()
+  + getHotel()
+  + createHotel()
+  + updateHotel()
+  + deleteHotel()
+}
+
+class Booking {
+  - id : ObjectId
+  - checkInDate : Date
+  - checkOutDate : Date
+  - user : ObjectId
+  - hotel : ObjectId
+  - serviceSelections : ServiceSelection[]
+  - createdAt : Date
+  --
+  + getBookings()
+  + getBooking()
+  + addBooking()
+  + updateBooking()
+  + deleteBooking()
+}
+
+class ServiceSelection <<embedded>> {
+  - date : String
+  - services : ObjectId[]
+}
+
+class Service {
+  - id : ObjectId
+  - hotel : ObjectId
+  - name : String
+  - description : String
+  - dailyCapacity : Number
+  - createdAt : Date
+  --
+  + getServices()
+  + getService()
+  + createService()
+  + updateService()
+  + deleteService()
+}
+
+class Report {
+  - id : ObjectId
+  - reportType : String
+  - description : String
+  - user : ObjectId
+  - hotel : ObjectId
+  - booking : ObjectId
+  - createdAt : Date
+  --
+  + getReports()
+  + getReport()
+  + addReport()
+  + deleteReport()
+}
+
+User "1" -- "0..*" Booking : creates
+User "1" -- "0..*" Report : creates
+Hotel "1" -- "0..*" Booking : has
+Hotel "1" *-- "0..*" Service : has
+Hotel "1" -- "0..*" Report : has
+Booking "1" -- "0..*" Report : has
+Booking "1" *-- "0..*" ServiceSelection : has
+ServiceSelection "0..*" -- "0..2" Service : selects
+
+@enduml

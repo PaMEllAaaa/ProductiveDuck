@@ -1,0 +1,228 @@
+@startuml
+actor "User / Admin" as Actor
+participant "Website" as Web
+participant ":User" as Account
+participant ":Hotel" as Hotel
+participant ":Booking" as Booking
+participant ":Service" as Service
+participant ":Report" as Report
+database "MongoDB" as DB
+
+
+opt Browse hotels
+    Actor -> Web : Browse hotels
+    activate Web
+
+    Web -> Hotel : getHotels()
+    activate Hotel
+
+    Hotel -> DB : Find hotels and their services
+    DB --> Hotel : Hotel list
+
+    Hotel --> Web : Hotel list
+    deactivate Hotel
+
+    Web --> Actor : Display hotels
+    deactivate Web
+end
+
+
+opt Authenticate
+    alt Register
+        Actor -> Web : Submit name, tel, role, email and password
+        activate Web
+
+        Web -> Account : register()
+        activate Account
+        Account -> DB : Create user (password hashed)
+
+        alt Registration successful
+            DB --> Account : Created user
+            Account -> Account : Generate JWT
+            Account --> Web : Token
+            Web --> Actor : Display registration success
+        else Registration failed
+            DB --> Account : Database error
+            Account --> Web : Error
+            Web --> Actor : Display registration error
+
+        end
+
+        deactivate Account
+        deactivate Web
+
+    else Login
+        Actor -> Web : login an account
+        activate Web
+        Web -> Account : login()
+        activate Account
+
+        Account -> DB : Find user by email
+        DB --> Account : User data or not found
+        Account -> Account : Check credentials
+
+        alt Login failed
+            Account --> Web : Error
+            Web --> Actor : Display login error
+        else Login successful
+            Account --> Web : Token
+            Web --> Actor : Display user logged in
+
+        end
+
+        deactivate Account
+        deactivate Web
+    end
+end
+
+
+opt Logged in
+    activate Web
+    Web -> Account : getMe() with Bearer token
+    activate Account
+    Account -> DB : Find current user
+    DB --> Account : User data including role
+    Account --> Web : User data including role
+    deactivate Account
+
+    opt logout
+        
+    end
+
+    alt role = admin
+        opt Get All Hotels
+
+        end 
+
+        opt Get Hotel
+
+        end 
+
+        opt Create New Hotel
+            Web -> Hotel : getHotels()
+            activate Hotel
+            Hotel -> DB : Find hotels
+            DB --> Hotel : Hotel documents
+            Hotel --> Web : Hotel list
+            deactivate Hotel
+            Web --> Actor : Display hotel list
+        end
+
+        opt Update Hotel
+
+        end 
+
+        opt Delete Hotel
+
+        end 
+
+        opt Get All Services
+
+        end 
+
+        opt Get Services for Hotel
+
+        end 
+
+        opt Get Service
+
+        end
+
+        opt Add Service
+
+        end 
+
+        opt Update Service
+
+        end 
+
+        opt Delete Service
+
+        end 
+
+        opt Get All Bookings
+        end
+
+        opt Get Bookings for Hotel
+        end
+
+        opt Get Booking
+        end
+
+        opt Create Booking for User
+        end
+
+        opt Update Booking
+        end
+
+        opt Delete Booking
+        end
+
+        opt View All Reports
+
+        end 
+
+        opt View Report
+
+        end 
+
+        opt Delete Report
+
+        end 
+
+    else role = user
+        opt Get All Hotels
+            Web -> Hotel : getHotels()
+            activate Hotel
+            Hotel -> DB : Find hotels
+            DB --> Hotel : Hotel documents
+            Hotel --> Web : Hotel list
+            deactivate Hotel
+            Web --> Actor : Display hotel list
+        end
+
+        opt Get Hotel
+
+        end 
+
+        opt Get Services for Hotel
+
+        end 
+
+        opt Get Service
+
+        end 
+        
+        opt Get My Bookings
+        end
+
+        opt Get My Booking
+        end
+
+        opt Create Booking
+        end
+
+        opt Update My Booking
+        end
+
+        opt Delete My Booking
+        end
+
+        opt Create Report
+
+        end 
+
+        opt View My Reports
+
+        end 
+
+        
+        opt View My Report
+
+        end 
+    end
+
+    deactivate Web
+end
+
+@enduml

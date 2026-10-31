@@ -1,6 +1,13 @@
 @startuml Hotel Booking System Use Case Diagram
 left to right direction
 actor "User" as user
+actor "Unregistered User" as unregUser
+actor "Registered User" as regUser
+actor "Admin" as admin
+
+user <|-- unregUser
+user <|-- regUser
+
 rectangle "Hotel Booking System" as HotelBookingSystem {
     package "Account Management" as AccountManagement {
         usecase "Register" as register
@@ -32,18 +39,17 @@ rectangle "Hotel Booking System" as HotelBookingSystem {
 
 }
 
-user -- register
-user -- loginlogout
-user -- createHotelBooking
-user -- viewHotelBooking
-user -- editHotelBooking
-user -- deleteHotelBooking
+unregUser -- register
+regUser -- loginlogout
+regUser -- createHotelBooking
+regUser -- viewHotelBooking
+regUser -- editHotelBooking
+regUser -- deleteHotelBooking
 user -- viewHotelInfo
 user -- viewService
-user -- createReport
-user -- viewReport
+regUser -- createReport
+regUser -- viewReport
 
-actor "Admin" as admin
 register -- admin
 loginlogout -- admin
 createHotelBooking -- admin

@@ -1,0 +1,78 @@
+@startuml
+actor "User / Admin" as Actor
+participant "Website" as Web
+participant ":User" as Account
+participant ":Hotel" as Hotel
+participant ":Booking" as Booking
+participant ":Service" as Service
+participant ":Report" as Report
+database "MongoDB" as DB
+
+
+opt Browse hotels
+    Actor -> Web : Browse hotels
+    activate Web
+
+    Web -> Hotel : getHotels()
+    activate Hotel
+
+    Hotel -> DB : Find hotels and their services
+    DB --> Hotel : Hotel list
+
+    Hotel --> Web : Hotel list
+    deactivate Hotel
+
+    Web --> Actor : Display hotels
+    deactivate Web
+end
+
+
+opt Authenticate
+    alt Register
+        Actor -> Web : Submit name, tel, role, email and password
+        activate Web
+
+        Web -> Account : register()
+        activate Account
+        Account -> DB : Create user (password hashed)
+
+        alt Registration successful
+            DB --> Account : Created user
+            Account -> Account : Generate JWT
+            Account --> Web : Token
+            Web --> Actor : Display registration success
+        else Registration failed
+            DB --> Account : Database error
+            Account --> Web : Error
+            Web --> Actor : Display registration error
+
+        end
+
+        deactivate Account
+        deactivate Web
+
+    else Login
+        Actor -> Web : login an account
+        activate Web
+        Web -> Account : login()
+        activate Account
+
+        Account -> DB : Find user by email
+        DB --> Account : User data or not found
+        Account -> Account : Check credentials
+
+        alt Login failed
+            Account --> Web : Error
+            Web --> Actor : Display login error
+        else Login successful
+            Account --> Web : Token
+            Web --> Actor : Display user logged in
+
+        end
+
+        deactivate Account
+        deactivate Web
+    end
+end
+
+@enduml

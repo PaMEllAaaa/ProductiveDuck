@@ -17,8 +17,8 @@ exports.register = async(req, res, next) => {
         });
         // Create token
         //const token = user.getSignedJwtToken();
-        //res.status(200).json({sucess:true,token});
-        sendTokenResponse(user, 200, res);
+        //res.status(201).json({sucess:true,token});
+        sendTokenResponse(user, 201, res);
     } catch (err) {
         res.status(400).json({success:false});
         console.log(err.stack);

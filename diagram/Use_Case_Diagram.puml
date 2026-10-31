@@ -1,6 +1,13 @@
 @startuml Hotel Booking System Use Case Diagram
 left to right direction
 actor "User" as user
+actor "Unregistered User" as unregUser
+actor "Registered User" as regUser
+actor "Admin" as admin
+
+user <|-- unregUser
+user <|-- regUser
+
 rectangle "Hotel Booking System" as HotelBookingSystem {
     package "Account Management" as AccountManagement {
         usecase "Register" as register
@@ -14,11 +21,15 @@ rectangle "Hotel Booking System" as HotelBookingSystem {
     }
     package "Hotel Management" as HotelManagement {
         usecase "Create hotel information" as createHotelInfo
-        usecase "Create service" as createService
-        usecase "Update service" as updateService
         usecase "View hotel information" as viewHotelInfo
         usecase "Edit hotel information" as editHotelInfo
         usecase "Delete hotel information" as deleteHotelInfo
+    } 
+    package "Service Management" as ServiceManagement {
+        usecase "Create service" as createService
+        usecase "View service" as viewService
+        usecase "Edit service" as editService
+        usecase "Delete service" as deleteService
     } 
     package "Problem Report Management" as ReportManagement {
         usecase "Create report" as createReport
@@ -28,22 +39,20 @@ rectangle "Hotel Booking System" as HotelBookingSystem {
 
 }
 
-user -- register
-user -- loginlogout
-user -- createHotelBooking
-user -- viewHotelBooking
-user -- editHotelBooking
-user -- deleteHotelBooking
+unregUser -- register
+regUser -- loginlogout
+regUser -- createHotelBooking
+regUser -- viewHotelBooking
+regUser -- editHotelBooking
+regUser -- deleteHotelBooking
 user -- viewHotelInfo
-user -- createReport
-user -- viewReport
+user -- viewService
+regUser -- createReport
+regUser -- viewReport
 
-createHotelInfo .down.> createService : <<include>>
-updateService .down.> editHotelInfo : <<extend>>
-
-actor "Admin" as admin
 register -- admin
 loginlogout -- admin
+createHotelBooking -- admin
 viewHotelBooking -- admin
 editHotelBooking -- admin
 deleteHotelBooking -- admin
@@ -51,6 +60,10 @@ createHotelInfo -- admin
 viewHotelInfo -- admin
 editHotelInfo -- admin
 deleteHotelInfo -- admin
+createService -- admin
+viewService -- admin
+editService -- admin
+deleteService -- admin
 viewReport -- admin
 deleteReport -- admin
 
